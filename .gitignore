@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+
+# External repos (cloned separately in ~/vla_ws/lerobot)
+lerobot/
+
+# Datasets, episodes & model checkpoints
+episodes/
+failed/
+datasets/
+checkpoints/
+outputs/
+*.mp4
+*.npz
+*.safetensors
+*.pt
+*.pth
+
+# Logs & caches
+wandb/
+.cache/
+*.log
+
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
