@@ -67,8 +67,11 @@ ifarlab-vla/
    conda activate lerobot
    python scripts/test_smolvla.py
 
-   # Batch size 1, 4, 8, 16 için eğitim VRAM testini de eklemek için:
+   # Batch size 1, 4, 8, 16 için eğitim (forward + backward + AdamW) VRAM testini eklemek için:
    python scripts/test_smolvla.py --test-train
+
+   # bfloat16 mixed precision (--amp) ile eğitim VRAM testi:
+   python scripts/test_smolvla.py --test-train --amp
    ```
 
 3. **Veri yapısı ve ön-işleme sözleşmesini inceleyin:**

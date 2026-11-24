@@ -67,8 +67,11 @@ ifarlab-vla/
    conda activate lerobot
    python scripts/test_smolvla.py
 
-   # Include training forward/backward VRAM check for batch sizes 1, 4, 8, 16:
+   # Include training (forward + backward + AdamW) VRAM check for batch sizes 1, 4, 8, 16:
    python scripts/test_smolvla.py --test-train
+
+   # Training VRAM check with bfloat16 mixed precision (--amp):
+   python scripts/test_smolvla.py --test-train --amp
    ```
 
 3. **Review the data schema and preprocessing contract:**

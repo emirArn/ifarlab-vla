@@ -48,19 +48,22 @@ Model eğitimi ve politika sunucusu, sistemdeki **ROS 2 Humble (Python 3.10)** b
 
 ## 3. Lab GPU Performans ve Bellek Değerlendirmesi
 
-Aşağıdaki ölçümler lab GPU makinesinde `python scripts/test_smolvla.py --test-train` betiği çalıştırılarak elde edilecektir.
+Aşağıdaki ölçümler lab GPU makinesinde `python scripts/test_smolvla.py --test-train` (ve `bfloat16` için `--amp`) betiği çalıştırılarak elde edilecektir.
 
 * **GPU Modeli / Toplam VRAM:** `[ÖLÇÜM BEKLENİYOR — 20 GB Lab GPU]`
 
-### 3.1. Çıkarım (Inference) Performansı (`batch_size = 1`, `320×240` RGB + `[8]` state)
+### 3.1. Çıkarım (Inference) Performansı (`batch_size = 1`, 1 kamera `320×240` RGB + `[8]` state)
 
 | Ölçüt | Değer |
 | :--- | :--- |
-| Ortalama / Min / Maks Gecikme (ms) | `[ÖLÇÜM BEKLENİYOR]` |
+| Uçtan Uca Gecikme — Ortalama / Min / Maks (ms) | `[ÖLÇÜM BEKLENİYOR]` |
+| Sadece Model + Postprocess Gecikmesi — Ortalama (ms) | `[ÖLÇÜM BEKLENİYOR]` |
 | Anlık / Tepe VRAM Kullanımı (GB) | `[ÖLÇÜM BEKLENİYOR]` |
 | 10 Hz Kontrol Döngüsü (1 s chunk yenileme) Uygunluğu | `[ÖLÇÜM BEKLENİYOR]` |
 
-### 3.2. Eğitim (`forward + backward`) Batch Size ve VRAM Sınırları
+### 3.2. Eğitim (`forward + backward + AdamW`) Batch Size ve VRAM Sınırları
+
+* **Precision Modu (`fp32` / `bfloat16 --amp`):** `[ÖLÇÜM BEKLENİYOR]`
 
 | `batch_size` | Durum (`OK` / `OOM`) | 1 Adım Süresi (ms) | Tepe VRAM (GB) |
 | :---: | :---: | :---: | :---: |

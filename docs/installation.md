@@ -119,11 +119,14 @@ From this repository root:
 ```bash
 conda activate lerobot
 
-# Inference latency & VRAM benchmark
+# Inference latency & VRAM benchmark — defaults to 1 fixed scene camera (--num-cameras 1)
 python scripts/test_smolvla.py
 
-# Inference + training forward/backward VRAM benchmark (batch sizes 1, 4, 8, 16)
+# Inference + training (forward + backward + AdamW) VRAM benchmark (batch sizes 1, 4, 8, 16)
 python scripts/test_smolvla.py --test-train
+
+# Training VRAM benchmark with bfloat16 mixed precision (--amp)
+python scripts/test_smolvla.py --test-train --amp
 ```
 
 ---
@@ -135,4 +138,4 @@ python scripts/test_smolvla.py --test-train
 | `conda: command not found` | Open a new terminal or run `source ~/.bashrc`. |
 | `CondaToSNonInteractiveError` | Run the two `conda tos accept ...` commands in Step 1. |
 | `CUDA: False` | Check `nvidia-smi`; if a CPU PyTorch wheel was installed, reinstall CUDA PyTorch: `pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126` |
-| `OutOfMemoryError (OOM)` | SmolVLA fine-tuning requires high VRAM (~20 GB recommended). Try smaller batches with `--batch-sizes 1 2 4`. |
+| `OutOfMemoryError (OOM)` | SmolVLA fine-tuning requires high VRAM (~20 GB recommended). Try `--amp` (`bfloat16`) and/or smaller batches with `--batch-sizes 1 2 4`. |

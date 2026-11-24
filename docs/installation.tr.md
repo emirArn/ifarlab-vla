@@ -119,11 +119,14 @@ Bu depo kök dizininden:
 ```bash
 conda activate lerobot
 
-# Çıkarım (inference gecikmesi + VRAM) testi
+# Çıkarım (inference gecikmesi + VRAM) testi — varsayılan: 1 sabit sahne kamerası (--num-cameras 1)
 python scripts/test_smolvla.py
 
-# Çıkarım + batch size (1, 4, 8, 16) eğitim VRAM testi
+# Çıkarım + batch size (1, 4, 8, 16) eğitim (forward + backward + AdamW) VRAM testi
 python scripts/test_smolvla.py --test-train
+
+# bfloat16 mixed precision (--amp) ile eğitim VRAM testi
+python scripts/test_smolvla.py --test-train --amp
 ```
 
 ---
@@ -135,4 +138,4 @@ python scripts/test_smolvla.py --test-train
 | `conda: command not found` | Terminali kapatıp yeniden açın veya `source ~/.bashrc` çalıştırın. |
 | `CondaToSNonInteractiveError` | Adım 1'deki iki `conda tos accept ...` komutunu çalıştırın. |
 | `CUDA: False` dönüyor | `nvidia-smi` ile sürücüyü doğrulayın; gerekirse CUDA uyumlu PyTorch'u üzerine kurun: `pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126` |
-| `OutOfMemoryError (OOM)` | SmolVLA ince ayarı için yüksek VRAM gerekir (önerilen ~20 GB). `--batch-sizes 1 2 4` ile daha küçük batch değerlerini deneyin. |
+| `OutOfMemoryError (OOM)` | SmolVLA ince ayarı için yüksek VRAM gerekir (önerilen ~20 GB). `--amp` (`bfloat16`) ve/veya `--batch-sizes 1 2 4` ile daha küçük batch değerlerini deneyin. |

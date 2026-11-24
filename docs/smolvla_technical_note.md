@@ -48,19 +48,22 @@ Inspection of `configuration_smolvla.py`, `processor_smolvla.py`, and `modeling_
 
 ## 3. Lab GPU Performance & Memory Benchmark
 
-The metrics below are measured on the lab GPU machine using `python scripts/test_smolvla.py --test-train`.
+The metrics below are measured on the lab GPU machine using `python scripts/test_smolvla.py --test-train` (and `--amp` for `bfloat16`).
 
 * **GPU Model / Total VRAM:** `[PENDING — 20 GB Lab GPU]`
 
-### 3.1. Inference Performance (`batch_size = 1`, `320×240` RGB + `[8]` state)
+### 3.1. Inference Performance (`batch_size = 1`, 1 camera `320×240` RGB + `[8]` state)
 
 | Metric | Value |
 | :--- | :--- |
-| Latency — Mean / Min / Max (ms) | `[PENDING]` |
+| End-to-End Latency — Mean / Min / Max (ms) | `[PENDING]` |
+| Model + Postprocess Latency — Mean (ms) | `[PENDING]` |
 | VRAM — Current / Peak (GB) | `[PENDING]` |
 | Suitability for 10 Hz Control (1 s chunk replanning) | `[PENDING]` |
 
-### 3.2. Training (`forward + backward`) Batch Size & VRAM Limits
+### 3.2. Training (`forward + backward + AdamW`) Batch Size & VRAM Limits
+
+* **Precision Mode (`fp32` / `bfloat16 --amp`):** `[PENDING]`
 
 | `batch_size` | Status (`OK` / `OOM`) | Step Time (ms) | Peak VRAM (GB) |
 | :---: | :---: | :---: | :---: |
