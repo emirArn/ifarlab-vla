@@ -123,6 +123,7 @@ def run_train_batch_benchmark(
     img_keys: list[str],
     batch_sizes: list[int],
     use_amp: bool = False,
+    train_steps: int = 3,
 ):
     print("\n=== 2. EĞİTİM (FORWARD + BACKWARD + ADAMW) BATCH SIZE / VRAM TESTİ ===")
     if device.type != "cuda":
@@ -132,9 +133,10 @@ def run_train_batch_benchmark(
     trainable_params = [p for p in model.parameters() if p.requires_grad]
     total_params = sum(p.numel() for p in model.parameters())
     trainable_count = sum(p.numel() for p in trainable_params)
+    param_dtype = next(model.parameters()).dtype
     print(
         f"Parametreler: {trainable_count / 1e6:.1f}M eğitilen / {total_params / 1e6:.1f}M toplam "
-        f"| AMP (bfloat16): {use_amp}"
+        f"| Ağırlık dtype: {param_dtype} | AMP (bfloat16): {use_amp} | 1 warmup + {train_steps} adım ort."
     )
 
     for bs in batch_sizes:
@@ -162,19 +164,31 @@ def run_train_batch_benchmark(
             batch["action"] = torch.zeros(bs, model.config.chunk_size, action_dim, device=device, dtype=torch.float32)
             batch["action_is_pad"] = torch.zeros(bs, model.config.chunk_size, device=device, dtype=torch.bool)
 
-            t0 = time.perf_counter()
+            # 1 warmup adımı (ilk adım CUDA/cuDNN derleme maliyetini içerir)
             optimizer.zero_grad(set_to_none=True)
             with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=use_amp):
                 loss, _ = model.forward(batch)
             loss.backward()
             optimizer.step()
             torch.cuda.synchronize()
-            step_ms = (time.perf_counter() - t0) * 1000.0
+
+            step_times_ms = []
+            for _ in range(train_steps):
+                t0 = time.perf_counter()
+                optimizer.zero_grad(set_to_none=True)
+                with torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=use_amp):
+                    loss, _ = model.forward(batch)
+                loss.backward()
+                optimizer.step()
+                torch.cuda.synchronize()
+                step_times_ms.append((time.perf_counter() - t0) * 1000.0)
+
+            avg_step_ms = sum(step_times_ms) / len(step_times_ms)
             _, peak_gb = gpu_mem_gb()
 
             print(
-                f"[OK]  batch_size={bs:<2d} | 1 adım: {step_ms:7.1f} ms | "
-                f"Tepe VRAM: {peak_gb:.2f} GB | loss={loss.item():.4f}"
+                f"[OK]  batch_size={bs:<2d} | 1 adım (ort): {avg_step_ms:7.1f} ms | "
+                f"Tepe VRAM: {peak_gb:.2f} GB"
             )
         except torch.cuda.OutOfMemoryError:
             print(f"[OOM] batch_size={bs:<2d} | Bellek yetersiz (Out of Memory)")
