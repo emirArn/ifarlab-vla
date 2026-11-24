@@ -23,7 +23,7 @@ Sistemdeki **ROS 2 Humble (Python 3.10)** paketleriyle bağımlılık çakışma
 
 ## Ön Koşullar
 
-* NVIDIA GPU ve güncel sürücü (`nvidia-smi` çıktısı görünmeli)
+* NVIDIA GPU ve **CUDA 13** uyumlu güncel sürücü (`nvidia-smi` çıktısı görünmeli; kilit dosyadaki `torch==2.15.0` CUDA 13 çalışma zamanı kullanır)
 * `git` ve `wget` kurulu (yoksa: `sudo apt update && sudo apt install -y git wget`)
 * En az **15–20 GB** boş disk alanı
 
@@ -68,6 +68,13 @@ conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 conda create -n lerobot python=3.12 -y
 conda activate lerobot
 conda install ffmpeg -c conda-forge -y
+```
+
+Alternatif olarak doğrudan depo içindeki [`env/environment.yml`](../env/environment.yml) dosyasıyla tek komutta da oluşturabilirsiniz:
+
+```bash
+conda env create -f env/environment.yml
+conda activate lerobot
 ```
 
 > [!IMPORTANT]
@@ -137,5 +144,5 @@ python scripts/test_smolvla.py --test-train --amp
 | :--- | :--- |
 | `conda: command not found` | Terminali kapatıp yeniden açın veya `source ~/.bashrc` çalıştırın. |
 | `CondaToSNonInteractiveError` | Adım 1'deki iki `conda tos accept ...` komutunu çalıştırın. |
-| `CUDA: False` dönüyor | `nvidia-smi` ile sürücüyü doğrulayın; gerekirse CUDA uyumlu PyTorch'u üzerine kurun: `pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126` |
+| `CUDA: False` dönüyor | `nvidia-smi` ile sürücünün CUDA 13 desteklediğini doğrulayın; CPU wheel kurulmuşsa kilit sürümle yeniden kurun: `pip install --force-reinstall torch==2.15.0 torchvision==0.29.2` |
 | `OutOfMemoryError (OOM)` | SmolVLA ince ayarı için yüksek VRAM gerekir (önerilen ~20 GB). `--amp` (`bfloat16`) ve/veya `--batch-sizes 1 2 4` ile daha küçük batch değerlerini deneyin. |

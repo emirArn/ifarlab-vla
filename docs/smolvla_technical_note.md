@@ -40,9 +40,9 @@ Inspection of `configuration_smolvla.py`, `processor_smolvla.py`, and `modeling_
 | `task` | `"kırmızı küpü al ve kutuya koy"` | `NewLineTaskProcessorStep` appends `\n`; tokenized with `SmolVLM2` tokenizer (`max_length = 48`). |
 | `extra.joint_ref`, `extra.cube_pose` | Offline analysis only | Does not start with `observation.`; excluded from `input_features` and never fed to the model. |
 
-### Key Architecture & Fine-Tuning Parameters
-* **Observation / Action Horizon:** `n_obs_steps = 1`, `chunk_size = 50`, `n_action_steps = 50`. From a single observation, the model predicts a **5-second (50-step)** action chunk at 10 Hz. During closed-loop control, the bridge node extracts the first `8` dimensions (`[:, :, :8]`), executes the first **`~10` steps (1 s)**, and re-queries the policy server.
-* **Single-GPU Fine-Tuning Strategy:** By default, `freeze_vision_encoder = True`, `train_expert_only = True`, and `train_state_proj = True`. The VLM backbone stays frozen while only the action expert and state projection are trained (`lr = 1e-4`, `warmup = 1000`, `num_steps = 10` flow matching).
+### Key Architecture, Inference & Fine-Tuning Parameters
+* **Observation / Action Horizon & Inference:** `n_obs_steps = 1`, `chunk_size = 50`, `n_action_steps = 50`, `num_steps = 10` (flow-matching denoising steps at inference time, which directly controls latency). From a single observation, the model predicts a **5-second (50-step)** action chunk at 10 Hz. Because `_get_action_chunk()` automatically unpads actions to `action_feature.shape[0]`, the fine-tuned model outputs `[B, 50, 8]` directly. To replan every ~1 s in closed loop, the policy server calls `predict_action_chunk()` directly and executes the first **`~10` steps (1 s)** (alternatively, if `select_action()` is used, `n_action_steps` must be set to `10`).
+* **Single-GPU Fine-Tuning Strategy:** By default, `freeze_vision_encoder = True`, `train_expert_only = True`, and `train_state_proj = True`. The VLM backbone stays frozen while only the action expert and state projection are trained (`lr = 1e-4`, `warmup = 1000`).
 
 ---
 
@@ -52,7 +52,10 @@ The metrics below are measured on the lab GPU machine using `python scripts/test
 
 * **GPU Model / Total VRAM:** `[PENDING — 20 GB Lab GPU]`
 
-### 3.1. Inference Performance (`batch_size = 1`, 1 camera `320×240` RGB + `[8]` state)
+### 3.1. Inference Performance (`batch_size = 1`, 1 camera `320×240` RGB)
+
+> [!NOTE]
+> Pre-fine-tuning benchmarks with `lerobot/smolvla_base` use the base checkpoint's own 6-dim `observation.state` and first camera key (`observation.images.camera1`). Because states are internally zero-padded to `max_state_dim = 32`, the latency/VRAM difference relative to the 8-dim target schema is negligible.
 
 | Metric | Value |
 | :--- | :--- |

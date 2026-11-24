@@ -44,6 +44,7 @@ ifarlab-vla/
 ├── README.tr.md                        # Project overview (TR)
 ├── .gitignore
 ├── env/
+│   ├── environment.yml                 # Conda environment spec (Python 3.12 + ffmpeg)
 │   ├── lerobot_commit.txt              # Pinned LeRobot git commit hash
 │   └── requirements_lock.txt           # Reference pip freeze snapshot
 ├── docs/

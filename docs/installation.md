@@ -23,7 +23,7 @@ To avoid dependency conflicts with **ROS 2 Humble (Python 3.10)**, the VLA stack
 
 ## Prerequisites
 
-* NVIDIA GPU with an up-to-date driver (`nvidia-smi` should report your GPU and CUDA version)
+* NVIDIA GPU with an up-to-date **CUDA 13**-compatible driver (`nvidia-smi` should report your GPU and CUDA version; `torch==2.15.0` in the lockfile uses CUDA 13 runtime packages)
 * `git` and `wget` installed (`sudo apt update && sudo apt install -y git wget`)
 * At least **15–20 GB** of free disk space
 
@@ -68,6 +68,13 @@ Create and activate the `lerobot` environment, then install `ffmpeg` for `LeRobo
 conda create -n lerobot python=3.12 -y
 conda activate lerobot
 conda install ffmpeg -c conda-forge -y
+```
+
+Alternatively, create the environment directly from [`env/environment.yml`](../env/environment.yml):
+
+```bash
+conda env create -f env/environment.yml
+conda activate lerobot
 ```
 
 > [!IMPORTANT]
@@ -137,5 +144,5 @@ python scripts/test_smolvla.py --test-train --amp
 | :--- | :--- |
 | `conda: command not found` | Open a new terminal or run `source ~/.bashrc`. |
 | `CondaToSNonInteractiveError` | Run the two `conda tos accept ...` commands in Step 1. |
-| `CUDA: False` | Check `nvidia-smi`; if a CPU PyTorch wheel was installed, reinstall CUDA PyTorch: `pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126` |
+| `CUDA: False` | Verify your driver supports CUDA 13 via `nvidia-smi`; if a CPU wheel was installed, reinstall matching lockfile versions: `pip install --force-reinstall torch==2.15.0 torchvision==0.29.2` |
 | `OutOfMemoryError (OOM)` | SmolVLA fine-tuning requires high VRAM (~20 GB recommended). Try `--amp` (`bfloat16`) and/or smaller batches with `--batch-sizes 1 2 4`. |

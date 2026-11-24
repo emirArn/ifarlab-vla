@@ -40,9 +40,9 @@ Model eğitimi ve politika sunucusu, sistemdeki **ROS 2 Humble (Python 3.10)** b
 | `task` | `"kırmızı küpü al ve kutuya koy"` | `NewLineTaskProcessorStep` sonuna `\n` ekler; `SmolVLM2` tokenizer ile tokenize edilir (`max_length = 48`). |
 | `extra.joint_ref`, `extra.cube_pose` | Yalnızca çevrimdışı analiz amaçlı | `observation.` ön eki taşımadığı için `input_features` içine dahil edilmez, modele girdi olarak aktarılmaz. |
 
-### Temel Mimari ve İnce Ayar (Fine-Tuning) Parametreleri
-* **Gözlem ve Eylem Penceresi:** `n_obs_steps = 1`, `chunk_size = 50`, `n_action_steps = 50`. Model tek anlık gözlemden 10 Hz'de **5 saniyelik (50 adım)** eylem dizisi üretir. Kapalı döngü yürütmede `predict_action_chunk()` çıktısının ilk `8` boyutu (`[:, :, :8]`) alınarak ilk **`~10` adım (1 s)** uygulanır ve ardından yeniden sorgulama yapılır.
-* **Tek GPU İnce Ayar Stratejisi:** Varsayılan olarak `freeze_vision_encoder = True`, `train_expert_only = True` ve `train_state_proj = True` etkindir. Görme-dil omurgası dondurularak yalnızca aksiyon uzmanı ve durum projeksiyon katmanı eğitilir (`lr = 1e-4`, `warmup = 1000`, `num_steps = 10` flow matching).
+### Temel Mimari, Çıkarım ve İnce Ayar (Fine-Tuning) Parametreleri
+* **Gözlem, Eylem Penceresi ve Çıkarım:** `n_obs_steps = 1`, `chunk_size = 50`, `n_action_steps = 50`, `num_steps = 10` (çıkarımda flow-matching gürültü giderme adım sayısı; gecikmeyi doğrudan belirler). Model tek anlık gözlemden 10 Hz'de **5 saniyelik (50 adım)** eylem dizisi üretir. `_get_action_chunk()` padding'i `action_feature` boyutuna göre otomatik kırptığı için ince ayarlı modelin çıktısı doğrudan `[B, 50, 8]` şeklindedir. Kapalı döngüde her ~1 saniyede bir yeniden sorgulama yapılabilmesi için politika sunucusu doğrudan `predict_action_chunk()` çağırarak ilk **`~10` adımı (1 s)** uygular (alternatif olarak `select_action()` kullanılacaksa `n_action_steps = 10` ayarlanmalıdır).
+* **Tek GPU İnce Ayar Stratejisi:** Varsayılan olarak `freeze_vision_encoder = True`, `train_expert_only = True` ve `train_state_proj = True` etkindir. Görme-dil omurgası dondurularak yalnızca aksiyon uzmanı ve durum projeksiyon katmanı eğitilir (`lr = 1e-4`, `warmup = 1000`).
 
 ---
 
@@ -52,7 +52,10 @@ Aşağıdaki ölçümler lab GPU makinesinde `python scripts/test_smolvla.py --t
 
 * **GPU Modeli / Toplam VRAM:** `[ÖLÇÜM BEKLENİYOR — 20 GB Lab GPU]`
 
-### 3.1. Çıkarım (Inference) Performansı (`batch_size = 1`, 1 kamera `320×240` RGB + `[8]` state)
+### 3.1. Çıkarım (Inference) Performansı (`batch_size = 1`, 1 kamera `320×240` RGB)
+
+> [!NOTE]
+> İnce ayar öncesi `lerobot/smolvla_base` ile yapılan bu benchmark, temel checkpoint'in kendi 6 boyutlu `observation.state` ve ilk kamera anahtarı (`observation.images.camera1`) ile ölçülür. Model içinde durum vektörü zaten `max_state_dim = 32` boyutuna pad'lendiği için 8 boyutlu hedef şemaya göre süre/VRAM farkı ihmal edilebilir düzeydedir.
 
 | Ölçüt | Değer |
 | :--- | :--- |
