@@ -48,9 +48,10 @@ Model eğitimi ve politika sunucusu, sistemdeki **ROS 2 Humble (Python 3.10)** b
 
 ## 3. Lab GPU Performans ve Bellek Değerlendirmesi
 
-Aşağıdaki ölçümler lab GPU makinesinde `python scripts/test_smolvla.py --test-train` (ve `bfloat16` için `--amp`) betiği çalıştırılarak elde edilecektir.
+Aşağıdaki ölçümler lab makinesinde (`matisse`) `python scripts/test_smolvla.py --test-train` (AMP kapalı ve `--amp` açık) betiği çalıştırılarak elde edilmiştir.
 
-* **GPU Modeli / Toplam VRAM:** `[ÖLÇÜM BEKLENİYOR — 20 GB Lab GPU]`
+* **GPU Modeli / Toplam VRAM:** `NVIDIA GeForce RTX 4060` (`7.62 GB` VRAM)
+* **Parametre / Ağırlık Tipi:** `99.9M` eğitilen / `450.0M` toplam · `torch.bfloat16`
 
 ### 3.1. Çıkarım (Inference) Performansı (`batch_size = 1`, 1 kamera `320×240` RGB)
 
@@ -59,23 +60,24 @@ Aşağıdaki ölçümler lab GPU makinesinde `python scripts/test_smolvla.py --t
 
 | Ölçüt | Değer |
 | :--- | :--- |
-| Uçtan Uca Gecikme — Ortalama / Min / Maks (ms) | `[ÖLÇÜM BEKLENİYOR]` |
-| Sadece Model + Postprocess Gecikmesi — Ortalama (ms) | `[ÖLÇÜM BEKLENİYOR]` |
-| Anlık / Tepe VRAM Kullanımı (GB) | `[ÖLÇÜM BEKLENİYOR]` |
-| 10 Hz Kontrol Döngüsü (1 s chunk yenileme) Uygunluğu | `[ÖLÇÜM BEKLENİYOR]` |
+| Uçtan Uca Gecikme — Ortalama / Min / Maks (ms) | `98.6 – 100.3 ms` (`98.0 ms` min / `102.5 ms` maks) |
+| Sadece Model + Postprocess Gecikmesi — Ortalama (ms) | `98.3 – 100.0 ms` |
+| Anlık / Tepe VRAM Kullanımı (GB) | `0.86 GB` / `0.89 GB` |
+| 10 Hz Kontrol Döngüsü (1 s chunk yenileme) Uygunluğu | **Uygun** (1.000 ms yenileme aralığında ~100 ms sorgu süresi) |
 
 ### 3.2. Eğitim (`forward + backward + AdamW`) Batch Size ve VRAM Sınırları
 
-* **Precision Modu (`fp32` / `bfloat16 --amp`):** `[ÖLÇÜM BEKLENİYOR]`
+* **Precision Modu:** Ağırlık tipi `torch.bfloat16` · `AMP: False` ve `AMP (bfloat16): True` ile ölçülmüştür (1 warmup + 3 adım ortalaması).
 
-| `batch_size` | Durum (`OK` / `OOM`) | 1 Adım Süresi (ms) | Tepe VRAM (GB) |
-| :---: | :---: | :---: | :---: |
-| `1` | `[ÖLÇÜM BEKLENİYOR]` | `[ÖLÇÜM BEKLENİYOR]` | `[ÖLÇÜM BEKLENİYOR]` |
-| `4` | `[ÖLÇÜM BEKLENİYOR]` | `[ÖLÇÜM BEKLENİYOR]` | `[ÖLÇÜM BEKLENİYOR]` |
-| `8` | `[ÖLÇÜM BEKLENİYOR]` | `[ÖLÇÜM BEKLENİYOR]` | `[ÖLÇÜM BEKLENİYOR]` |
-| `16` | `[ÖLÇÜM BEKLENİYOR]` | `[ÖLÇÜM BEKLENİYOR]` | `[ÖLÇÜM BEKLENİYOR]` |
+| `batch_size` | Durum (`OK` / `OOM`) | 1 Adım — AMP Kapalı (ms) | Tepe VRAM — AMP Kapalı (GB) | 1 Adım — AMP Açık (ms) | Tepe VRAM — AMP Açık (GB) |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| `1` | `OK` | `62.2` | `1.65` | `65.3` | `1.65` |
+| `4` | `OK` | `96.5` | `1.79` | `96.7` | `1.75` |
+| `8` | `OK` | `167.3` | `2.32` | `179.0` | `2.22` |
+| `16` | `OK` | `320.9` | `3.36` | `357.3` | `3.17` |
 
-* **Eğitim İçin Önerilen `batch_size`:** `[ÖLÇÜM BEKLENİYOR]`
+* **Eğitim İçin Önerilen `batch_size`:** **`16`** (`AMP Kapalı` modda `320.9 ms/adım` ile ~%10 daha hızlı ve yalnızca `3.36 GB` tepe VRAM tüketiyor; 8 GB RTX 4060'ta bile bolca bellek payı bırakıyor).
+* **Tahmini 20.000 Adım İnce Ayar Süresi:** `batch_size = 16` ile yalnızca hesaplama süresi yaklaşık **~1.8 saat** (veri yükleme/video çözme ek süresi hariç).
 
 ---
 
@@ -85,3 +87,17 @@ Aşağıdaki ölçümler lab GPU makinesinde `python scripts/test_smolvla.py --t
 2. **Eklem Sırası ve Birim Tutarlılığı:** 8 boyutlu durum/eylem vektöründeki sıra (`[sim_ur10e_base_to_robot_mount (m), shoulder_pan, shoulder_lift, elbow, wrist_1, wrist_2, wrist_3 (rad), vacuum (0/1)]`) veri toplama düğümü, `LeRobotDataset` dönüştürücüsü ve köprü düğümü arasında birebir korunmalıdır.
 3. **Normalizasyon İstatistiklerinin Birlikte Yüklenmesi:** Politika sunucusu, eğitilmiş checkpoint ile birlikte ilgili `meta/stats.json` istatistiklerini yükleyerek `make_smolvla_pre_post_processors` üzerinden tutarlı `normalize` / `unnormalize` uygulamalıdır.
 4. **Güvenlik Kırpması (Köprü Düğümü):** Politika sunucusundan dönen eylemler kontrolcüye gönderilmeden önce ray konum/hız sınırları (`0.05–1.95 m`, maks `1.25 m/s`) ve eklem limitleri ile kırpılmalıdır.
+
+---
+
+## 5. Gelecek Çalışma Önerisi: Sesli Komut Arayüzü (Whisper)
+
+Ana kapalı döngü kontrol hattı doğrulandıktan sonra, eğitim hattına veya sabitlenmiş `lerobot` ortamına dokunmadan, mikrofondan alınan sesli komutları `/vla/task` ROS 2 topic'ine metin olarak yayınlayan hafif bir `faster-whisper` düğümü isteğe bağlı bir genişletme olarak kullanılabilir.
+
+İzole bir Conda ortamında yapılan ön test sonuçları (`NVIDIA GeForce RTX 3050 Ti`, `4 GB` VRAM):
+
+| Model (`faster-whisper`) | Cihaz / Precision | Gecikme (~3 sn ses) | VRAM | Not |
+| :--- | :---: | :---: | :---: | :--- |
+| `large-v3-turbo` | `cuda` / `int8_float16` | `~420 – 490 ms` | `1.13 GB` | Hem Türkçe hem İngilizce komutlarda yüksek doğruluk |
+
+* **Değerlendirme:** Çıkarım sırasında `SmolVLA` (`0.89 GB`) ve `faster-whisper large-v3-turbo` (`1.13 GB`) birlikte toplam **`~2.02 GB` VRAM** gerektirmektedir. Sesli komut desteğinin sisteme dahil edilip edilmeyeceği, ana SmolVLA kapalı döngü hattı test edilip doğrulandıktan sonra hedef makinedeki gerçek GPU durumuna göre değerlendirilecektir.
